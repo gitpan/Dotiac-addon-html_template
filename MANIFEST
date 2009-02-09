@@ -18,6 +18,8 @@ t/6_parser_html_template_tag_ssi.t
 t/6_parser_html_template_xchange.t
 t/7_special_html_template_convert.t
 t/7_special_html_template_combine.t
+t/7_special_html_template_noload.t
+t/7_special_html_template_unparsed.t
 t/Dotiac/DTL/Addon/customtext.pm
 t/Dtest.pm
 t/inc_more.html
@@ -43,6 +45,8 @@ t/parser_pure_var2.html
 t/parser_pure_var_html.html
 t/parser_pure_var_js.html
 t/parser_pure_var_url.html
+t/special_unparsed.html
+t/special_unparsed_noload.html
 t/tag_autoescape.html
 t/tag_block.html
 t/tag_comment.html
@@ -97,3 +101,7 @@ t/test2.html
 t/test3.html
 t/test4.html
 t/test5.html
+t/dir/inc.html
+t/dir/subinc.html
+t/Dotiac/DTL/Addon/unparsed.pm
+t/Dotiac/DTL/Tag/unparsed.pm

@@ -2,7 +2,7 @@
 #importloop.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.1
+#Version 0.2
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -19,6 +19,13 @@ use warnings;
 use strict;
 require Dotiac::DTL;
 
+use Carp;
+use File::Spec;
+use Scalar::Util qw/blessed reftype/;
+require File::Basename;
+
+our $VERSION=0.2;
+
 our $COMBINE=0;
 
 sub import {
@@ -26,32 +33,56 @@ sub import {
 	if (@_ and (lc($_[0]) eq "combine" or lc($_[0]) eq ":combine")) {
 		$COMBINE=1;
 	}
+	{
+		no warnings qw/redefine/;
+		*HTML::Template::new=\&new;
+		*HTML::Template::new_file=\&new_file;
+		*HTML::Template::new_filehandle=\&new_filehandle;
+		*HTML::Template::new_array_ref=\&new_array_ref;
+		*HTML::Template::new_scalar_ref=\&new_scalar_ref;
+	}
 }
 
 my %cache;
 
 
-package HTML::Template;
-use warnings;
-no warnings "redefine";
-use strict;
-use Carp;
-use File::Spec;
-use Scalar::Util qw/blessed reftype/;
-require File::Basename;
+#package HTML::Template;
 
-my %include;
+#our $VERSION=2.9;
+
+
+
+
+our %include;
 
 my %escapeflags = (
 	url=>"u",
 	js=>"j"
 );
+
+sub new_file {
+	my $class = shift;
+	return $class->new('filename', @_);
+}
+sub new_filehandle {
+	my $class = shift;
+	return $class->new('filehandle', @_);
+}
+sub new_array_ref {
+	my $class = shift;
+	return $class->new('arrayref', @_);
+}
+sub new_scalar_ref {
+	my $class = shift;
+	return $class->new('scalarref', @_);
+}
+
 sub new {
-	%include=();
+	%Dotiac::DTL::Addon::html_template::Convert::include=();
 	my $class=shift;
 	my %opts=@_;
 	my $flags="";
-	$flags.=($COMBINE?"+":"-");
+	$flags.=($Dotiac::DTL::Addon::html_template::Convert::COMBINE?"+":"-");
 	$flags.=($opts{global_vars}?"g":"n");
 	$flags.=($opts{case_sensitive}?"s":"i");
 	$flags.=($opts{loop_context_vars}?"l":"c");
@@ -61,22 +92,22 @@ sub new {
 		push @compile,$opts{compile} if exists ($opts{compile});
 		my $file=_find_file(\%opts);
 		croak "Can't find file: $opts{filename}" unless $file;
-		$include{$file}++;
+		$Dotiac::DTL::Addon::html_template::Convert::include{$file}++;
 		#die $flags;
 		if (-e "$file$flags.html") {
 			if ((stat("$file$flags.html"))[9] >= (stat("$file"))[9]) {
 				#if (-M "$file$flags.html" < -M $file) {
 				my $template=Dotiac::DTL->new("$file$flags.html",@compile);
-				_associate($template,$opts{associate}) if $opts{associate};
+				Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
 				return $template;
 			}
 		}
 		open my $fh, "<",$file or croak "Can't open $file: $!";
 		my $data=do {local $/;<$fh>};
 		close $fh;
-		$data=_filter($data,$opts{filter}) if $opts{filter};
+		$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
 		my @f = File::Basename::fileparse($file);
-		$data=_convert($data,\%opts,$f[1]);
+		$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts,$f[1]);
 		my $template;
 		if (open my $fh,">","$file$flags.html") {
 			print $fh $data;
@@ -92,7 +123,7 @@ sub new {
 			$Dotiac::DTL::CURRENTDIR=$f[1]; # Works only with Dotiac::DTL >= 0.8
 			$template=Dotiac::DTL->new(\$data);
 		}
-		_associate($template,$opts{associate}) if $opts{associate};
+		Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
 		return $template;
 	}
 	my $data;
@@ -106,17 +137,17 @@ sub new {
 	elsif ($opts{arrayref}) {
 		$data=join("",@{$opts{arrayref}});
 	}
-	$data=_filter($data,$opts{filter}) if $opts{filter};
+	$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
 	if ($cache{$data.$flags}) {
 		$data=$cache{$data.$flags};
 	}
 	else {
 		my $odata=$data;
-		$data=_convert($data,\%opts);
+		$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts);
 		$cache{$odata.$flags}=$data;
 	}
 	my $template=Dotiac::DTL->new(\$data);
-	_associate($template,$opts{associate}) if $opts{associate};
+	Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
 	return $template;
 }
 
@@ -430,22 +461,6 @@ sub _find_file { #like HTML::Template
 		}
 	}
 	return undef;
-}
-sub new_file {
-	my $class = shift;
-	return $class->new('filename', @_);
-}
-sub new_filehandle {
-	my $class = shift;
-	return $class->new('filehandle', @_);
-}
-sub new_array_ref {
-	my $class = shift;
-	return $class->new('arrayref', @_);
-}
-sub new_scalar_ref {
-	my $class = shift;
-	return $class->new('scalarref', @_);
 }
 1;
 

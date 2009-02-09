@@ -1,8 +1,28 @@
+###############################################################################
+#Variable.pm
+#Last Change: 2009-02-09
+#Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
+#Version 0.2
+####################
+#This file is an addon to the Dotiac::DTL project. 
+#http://search.cpan.org/perldoc?Dotiac::DTL
+#
+#Variable.pm is published under the terms of the MIT license, which  
+#basically means "Do with it whatever you want". For more information, see the 
+#license.txt file that should be enclosed with this distribution. A copy of
+#the license is (at the time of writing) also available at
+#http://www.opensource.org/licenses/mit-license.php .
+###############################################################################
+
+
 package Dotiac::DTL::Addon::html_template::Variable;
 use strict;
 use warnings;
 
 use base qw/Dotiac::DTL::Variable/;
+
+
+our $VERSION=0.2;
 
 sub new {
 	my $class=shift;
