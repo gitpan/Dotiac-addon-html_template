@@ -9,9 +9,12 @@ eval {
 		fail "This shouldn't really happen at all";
 	};
 };
-chdir "t";
-unshift @INC,"."; #To load the local version, not the redist one...
+BEGIN {
+	chdir "t";
+	unshift @INC,"."; #To load the local version, not the redist one...
+}
 require Dtest;
+use Dotiac::DTL::Addon::html_template;
 #require Dotiac::DTL::Addon::unparsed;
 dtest("special_unparsed.html","A{{ X }}A{% unparsed %}{{ X }}{% endunparsed %}A{{ Z }}\n",{});
 dtest("dir/subinc.html","ABACAB\nA\n",{});

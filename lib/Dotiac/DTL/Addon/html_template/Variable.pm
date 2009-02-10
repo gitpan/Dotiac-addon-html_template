@@ -2,7 +2,7 @@
 #Variable.pm
 #Last Change: 2009-02-09
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.2
+#Version 0.3
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -22,7 +22,7 @@ use warnings;
 use base qw/Dotiac::DTL::Variable/;
 
 
-our $VERSION=0.2;
+our $VERSION=0.3;
 
 sub new {
 	my $class=shift;

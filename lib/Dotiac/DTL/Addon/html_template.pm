@@ -2,7 +2,7 @@
 #html_template.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.2
+#Version 0.3
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -25,7 +25,7 @@ require Dotiac::DTL::Addon;
 require Dotiac::DTL::Addon::html_template::Variable;
 require Dotiac::DTL::Tag::importloop;
 
-our $VERSION=0.2;
+our $VERSION=0.3;
 
 my @oldparser;
 my $first;
@@ -188,7 +188,7 @@ __END__
 
 =head1 NAME
 
-Dotiac::DTL::Addon::html_template: Render combined Django and HTML::Template templates in Dotiac::DTL 
+Dotiac::DTL::Addon::html_template - Render combined Django and HTML::Template templates in Dotiac::DTL 
 
 =head1 SYNOPSIS
 
@@ -228,7 +228,7 @@ or get it from L<https://sourceforge.net/project/showfiles.php?group_id=249411&p
 
 =head1 DESCRIPTION
 
-This makes L<Dotiac::DTL> render templates written for L<HTML::Template>. There are three ways to do this:
+This makes L<Dotiac::DTL> render templates written for L<HTML::Template>. There are four ways to do this:
 
 =head2 Dotiac::DTL::Addon::html_template_pure
 
@@ -261,6 +261,16 @@ B<So even here Django and HTML::Template tags can be mixed, and there is just on
 	use Dotiac::DTL::Addon::html_template::Convert qw/combine/ #Now using Dotiac
 
 See L<Dotiac::DTL::Addon::html_template::Convert>
+
+=head2 Dotiac::DTL::Addon::html_template::Replace
+
+Same as Convert, behaves like HTML::Template to the script, but uses Dotiac::DTL internally. Also supports mixed templates.
+
+This is faster than C<Convert> when using scalarrefs and such as template data.
+
+C<Convert> on the other hand is more stable with filenames, C<Replace> might get confused when using different options on the same template.
+
+See L<Dotiac::DTL::Addon::html_template::Replace>
 
 =head1 OPTIONS
 
@@ -313,7 +323,7 @@ This one defaults to off in HTML::Template, but is set to on here, because it pr
 
 It can be set to off if there are some problems:
 
-	use Dotiac::DTL::Addon::html_template_pure loop_context_vars=>0;
+	use Dotiac::DTL::Addon::html_template loop_context_vars=>0;
 
 =head2 global_vars
 
@@ -321,19 +331,19 @@ This one defaults to off in HTML::Template, but it is also set to on here, becau
 
 It can be set to off if there are some problems:
 
-	use Dotiac::DTL::Addon::html_template_pure global_vars=>0;
+	use Dotiac::DTL::Addon::html_template global_vars=>0;
 
 =head2 default_escape
 
 This is set to off in HTML::Template (which is not that good), but set to HTML in Django. Therefore this parser has to fiddle about with it a lot.
 
-	use Dotiac::DTL::Addon::html_template_pure default_escape=>"HTML";
-	use Dotiac::DTL::Addon::html_template_pure default_escape=>"JS";
-	use Dotiac::DTL::Addon::html_template_pure default_escape=>"URL";
+	use Dotiac::DTL::Addon::html_template default_escape=>"HTML";
+	use Dotiac::DTL::Addon::html_template default_escape=>"JS";
+	use Dotiac::DTL::Addon::html_template default_escape=>"URL";
 
 =head2 Combine options
 
-	use Dotiac::DTL::Addon::html_template_pure global_vars=>0, loop_context_vars=>0, default_escape=>"HTML";
+	use Dotiac::DTL::Addon::html_template global_vars=>0, loop_context_vars=>0, default_escape=>"HTML";
 
 =head2 Setting options during runtime:
 

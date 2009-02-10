@@ -1,13 +1,13 @@
 ###############################################################################
-#importloop.pm
+#Convert.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.2
+#Version 0.3
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
 #
-#importloop.pm is published under the terms of the MIT license, which  
+#Convert.pm is published under the terms of the MIT license, which  
 #basically means "Do with it whatever you want". For more information, see the 
 #license.txt file that should be enclosed with libsofu distributions. A copy of
 #the license is (at the time of writing) also available at
@@ -24,7 +24,7 @@ use File::Spec;
 use Scalar::Util qw/blessed reftype/;
 require File::Basename;
 
-our $VERSION=0.2;
+our $VERSION=0.3;
 
 our $COMBINE=0;
 
@@ -34,12 +34,14 @@ sub import {
 		$COMBINE=1;
 	}
 	{
+		require Dotiac::DTL::Template;
 		no warnings qw/redefine/;
 		*HTML::Template::new=\&new;
 		*HTML::Template::new_file=\&new_file;
 		*HTML::Template::new_filehandle=\&new_filehandle;
 		*HTML::Template::new_array_ref=\&new_array_ref;
 		*HTML::Template::new_scalar_ref=\&new_scalar_ref;
+		*Dotiac::DTL::Template::query=\&query;
 	}
 }
 
@@ -50,8 +52,65 @@ my %cache;
 
 #our $VERSION=2.9;
 
+sub query {
+	my $self=shift;
+	my @a=$self->param();
+	if (@_ and $_ eq "name") {
+		my $l=$_[0];
+		$l=$l->[-1] if ref $l;
+		$l=lc($l);
+		return "VAR" if grep { lc($_) eq $l } @a;
+	}
+	if (@_ and $_ eq "loop") {
+		my $l=$_[0];
+		$l=$l->[-1] if ref $l;
+		$l=lc($l);
+		return () if grep { lc($_) eq $l } @a;
+	}
+	return $self->param();
+}
 
+sub _filter {
+	my $data=shift;
+	my $filter=shift;
+	$filter=[$filter] unless ref $filter eq 'ARRAY';
+	foreach my $f (@{$filter}) {
+		if (ref ($f) eq "HASH" and $f->{"sub"} and ref $f->{"sub"} eq "CODE") {
+			if ($f->{format} and not ref $f->{format} and lc($f->{format}) eq "array") {
+				my @data=split /\n/,$data;
+				$f->{'sub'}->(\@data);
+				$data=join("\n",@data);
+			}
+			else {
+				$f->{'sub'}->(\$data);
+			}
+		}
+		elsif (ref ($f) eq "CODE") {
+			$f->(\$data);
+		}
+	}
+	return $data;
+}
 
+sub _associate {
+	my $template=shift;
+	my $a=shift;
+	my @a=();
+	if (Scalar::Util::blessed($a)) {
+		@a=($a)
+	}
+	else {
+		@a=@{$a} if ref $a eq "ARRAY";
+	}
+	foreach my $obj (@a) {
+		next unless Scalar::Util::blessed($obj);
+		next unless $obj->can("param");
+		my @params=$obj->param();
+		foreach my $p (@params) {
+			$template->param($p,$obj->param($p));
+		}
+	}
+}
 
 our %include;
 
@@ -87,91 +146,75 @@ sub new {
 	$flags.=($opts{case_sensitive}?"s":"i");
 	$flags.=($opts{loop_context_vars}?"l":"c");
 	$flags.=($opts{default_escape}?($escapeflags{lc($opts{default_escape})}||"h"):"o");
-	if ($opts{filename}) {
-		my @compile=();
-		push @compile,$opts{compile} if exists ($opts{compile});
-		my $file=_find_file(\%opts);
-		croak "Can't find file: $opts{filename}" unless $file;
-		$Dotiac::DTL::Addon::html_template::Convert::include{$file}++;
-		#die $flags;
-		if (-e "$file$flags.html") {
-			if ((stat("$file$flags.html"))[9] >= (stat("$file"))[9]) {
-				#if (-M "$file$flags.html" < -M $file) {
-				my $template=Dotiac::DTL->new("$file$flags.html",@compile);
-				Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
-				return $template;
+	my $r = eval {
+		if ($opts{filename}) {
+			my @compile=();
+			push @compile,$opts{compile} if exists ($opts{compile});
+			my $file=_find_file(\%opts);
+			croak "Can't find file: $opts{filename}" unless $file;
+			$Dotiac::DTL::Addon::html_template::Convert::include{$file}++;
+			#die $flags;
+			if (-e "$file$flags.html") {
+				if ((stat("$file$flags.html"))[9] >= (stat("$file"))[9]) {
+					#if (-M "$file$flags.html" < -M $file) {
+					my $template=Dotiac::DTL->new("$file$flags.html",@compile);
+					Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
+					return $template;
+				}
 			}
-		}
-		open my $fh, "<",$file or croak "Can't open $file: $!";
-		my $data=do {local $/;<$fh>};
-		close $fh;
-		$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
-		my @f = File::Basename::fileparse($file);
-		$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts,$f[1]);
-		my $template;
-		if (open my $fh,">","$file$flags.html") {
-			print $fh $data;
+			open my $fh, "<",$file or croak "Can't open $file: $!";
+			my $data=do {local $/;<$fh>};
 			close $fh;
-			$template=Dotiac::DTL->new("$file$flags.html")
-		}
-		else {
-			if (@compile) {
-				carp "Can't compile template $file, even though it was requested. Can't create \"$file$flags.html\": $!";
-				delete $opts{compile};
-				@compile=();
-			}
-			$Dotiac::DTL::CURRENTDIR=$f[1]; # Works only with Dotiac::DTL >= 0.8
-			$template=Dotiac::DTL->new(\$data);
-		}
-		Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
-		return $template;
-	}
-	my $data;
-	if ($opts{filehandle}) {
-		my $fh=$opts{filehandle};
-		$data=do {local $/;<$fh>};
-	}
-	elsif ($opts{scalarref}) {
-		$data=${$opts{scalarref}}; #Have to deref here for conversion
-	}
-	elsif ($opts{arrayref}) {
-		$data=join("",@{$opts{arrayref}});
-	}
-	$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
-	if ($cache{$data.$flags}) {
-		$data=$cache{$data.$flags};
-	}
-	else {
-		my $odata=$data;
-		$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts);
-		$cache{$odata.$flags}=$data;
-	}
-	my $template=Dotiac::DTL->new(\$data);
-	Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
-	return $template;
-}
-
-sub _filter {
-	my $data=shift;
-	my $filter=shift;
-	$filter=[$filter] unless ref $filter eq 'ARRAY';
-	foreach my $f (@{$filter}) {
-		if (ref ($f) eq "HASH" and $f->{"sub"} and ref $f->{"sub"} eq "CODE") {
-			if ($f->{format} and not ref $f->{format} and lc($f->{format}) eq "array") {
-				my @data=split /\n/,$data;
-				$f->{'sub'}->(\@data);
-				$data=join("\n",@data);
+			$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
+			my @f = File::Basename::fileparse($file);
+			$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts,$f[1]);
+			my $template;
+			if (open my $fh,">","$file$flags.html") {
+				print $fh $data;
+				close $fh;
+				$template=Dotiac::DTL->new("$file$flags.html")
 			}
 			else {
-				$f->{'sub'}->(\$data);
+				if (@compile) {
+					carp "Can't compile template $file, even though it was requested. Can't create \"$file$flags.html\": $!";
+					delete $opts{compile};
+					@compile=();
+				}
+				$Dotiac::DTL::CURRENTDIR=$f[1]; # Works only with Dotiac::DTL >= 0.8
+				$template=Dotiac::DTL->new(\$data);
 			}
+			Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
+			return $template;
 		}
-		elsif (ref ($f) eq "CODE") {
-			$f->(\$data);
+		my $data;
+		if ($opts{filehandle}) {
+			my $fh=$opts{filehandle};
+			$data=do {local $/;<$fh>};
 		}
-	}
-	return $data;
+		elsif ($opts{scalarref}) {
+			$data=${$opts{scalarref}}; #Have to deref here for conversion
+		}
+		elsif ($opts{arrayref}) {
+			$data=join("",@{$opts{arrayref}});
+		}
+		$data=Dotiac::DTL::Addon::html_template::Convert::_filter($data,$opts{filter}) if $opts{filter};
+		if ($cache{$data.$flags}) {
+			$data=$cache{$data.$flags};
+		}
+		else {
+			my $odata=$data;
+			$data=Dotiac::DTL::Addon::html_template::Convert::_convert($data,\%opts);
+			$cache{$odata.$flags}=$data;
+		}
+		my $template=Dotiac::DTL->new(\$data);
+		Dotiac::DTL::Addon::html_template::Convert::_associate($template,$opts{associate}) if $opts{associate};
+		return $template;
+	};
+	return $r if $r;
+	croak "Something went wrong while generating the template: $@";
 }
+
+
 my %filter=(
 	url=>"urlencode",
 	js=>"escapejs",
@@ -344,7 +387,7 @@ sub _convert_tag {
 		open my $fh, "<",$file or croak "Can't open $file: $!";
 		my $data=do {local $/;<$fh>};
 		close $fh;
-		$data=_filter($data,$opts{filter}) if $opts{filter};
+		$data=Dotiac::DTL::Addon::html_template::Replace::_filter($data,$opts{filter}) if $opts{filter};
 		my @f = File::Basename::fileparse($file);
 		$data=_convert($data,\%opts,$f[1],@_);
 		if (open my $fh,">","$file$flags.html") {
@@ -413,26 +456,6 @@ sub _convert {
 	return $ret.$data;
 }
 
-sub _associate {
-	my $template=shift;
-	my $a=shift;
-	my @a=();
-	if (blessed($a)) {
-		@a=($a)
-	}
-	else {
-		@a=@{$a} if ref $a eq "ARRAY";
-	}
-	foreach my $obj (@a) {
-		next unless blessed($obj);
-		next unless $obj->can("param");
-		my @params=$obj->param();
-		foreach my $p (@params) {
-			$template->param($p,$obj->param($p));
-		}
-	}
-}
-
 sub _find_file { #like HTML::Template
 	my $o=shift;
 	my $file=$o->{filename};
@@ -468,7 +491,7 @@ __END__
 
 =head1 NAME
 
-Dotiac::DTL::Addon::html_template::Convert : Convert HTML::Template to Dotiac::DTL
+Dotiac::DTL::Addon::html_template::Convert - Convert HTML::Template to Dotiac::DTL
 
 =head1 SYNOPSIS
 
@@ -505,6 +528,8 @@ in the script that calls that template.
 Dotiac::DTL::Addon::html_template::Convert will then convert the template into L<Dotiac::DTL>/Django template code and render it.
 
 If the input is a filename, it will also save the converted versions under "FILENAME"+[+/-]+4 chars+".html" and won't reconvert as long as that file is there and not outdated.
+
+When using mostly scalarrefs as data, L<use Dotiac::DTL::Addon::html_template::Replace> is a better choice and faster.
 
 The 4 chars save the options of the HTML::Template, cause different options of HTML::Template result in different compiled template.
 
@@ -552,7 +577,7 @@ The flags will be added with a leading "+" instead of a "-".
 
 Some options are accepted (global_vars,filter,loop_context_vars,associate,case_sensitive) the others are ignored (caching).
 
-Sadly, the params() parameter without arguments won't work at all prior to Dotiac::DTL 0.8, since Dotiac::DTL doesn't really care for variables until it renders.
+Sadly, the params() call without arguments and query() won't work at all prior to Dotiac::DTL 0.8, since Dotiac::DTL doesn't really care for variables until it renders.
 
 =head2 Compiling
 
@@ -564,7 +589,7 @@ Instructs Dotiac::DTL to compile the template, only works with filenames
 
 	my $t=HTML::Template->new(filename=>"foo.html",compile=>1);
 
-This will first translate to "foo.html-dotiac.html" and then B<on the next run> compile to "foo.html-dotiac.html.pm"
+This will first translate to "foo.html[FLAGS].html" and then B<on the next run> compile to "foo.html[FLAGS]..html.pm"
 
 =head1 BUGS
 

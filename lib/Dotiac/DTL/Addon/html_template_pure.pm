@@ -2,7 +2,7 @@
 #html_template_pure.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.2
+#Version 0.3
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -26,7 +26,7 @@ require Dotiac::DTL::Tag::if;
 require Dotiac::DTL::Tag::importloop;
 require Dotiac::DTL::Tag::include;
 
-our $VERSION=0.2;
+our $VERSION=0.3;
 our %OPTIONS=(
 	loop_context_vars=>1,
 	global_vars=>1,
@@ -263,7 +263,7 @@ __END__
 
 =head1 NAME
 
-Dotiac::DTL::Addon::html_template_pure: Render pure HTML::Template in Dotiac::DTL 
+Dotiac::DTL::Addon::html_template_pure - Render pure HTML::Template in Dotiac::DTL 
 
 =head1 SYNOPSIS
 
@@ -336,6 +336,16 @@ B<So even here Django and HTML::Template tags can be mixed, and there is just on
 	use Dotiac::DTL::Addon::html_template::Convert qw/combine/ #Now using Dotiac
 
 See L<Dotiac::DTL::Addon::html_template::Convert>
+
+=head2 Dotiac::DTL::Addon::html_template::Replace
+
+Same as Convert, behaves like HTML::Template to the script, but uses Dotiac::DTL internally. Also supports mixed templates.
+
+This is faster than C<Convert> when using scalarrefs and such as template data.
+
+C<Convert> on the other hand is more stable with filenames, C<Replace> might get confused when using different options on the same template.
+
+See L<Dotiac::DTL::Addon::html_template::Replace>
 
 =head1 OPTIONS
 

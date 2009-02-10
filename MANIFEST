@@ -1,6 +1,7 @@
-lib/Dotiac/DTL/Addon/html_template/Convert.pm
 lib/Dotiac/DTL/Addon/html_template.pm
 lib/Dotiac/DTL/Addon/html_template_pure.pm
+lib/Dotiac/DTL/Addon/html_template/Convert.pm
+lib/Dotiac/DTL/Addon/html_template/Replace.pm
 lib/Dotiac/DTL/Addon/html_template/Variable.pm
 Makefile.PL
 MANIFEST
@@ -20,6 +21,8 @@ t/7_special_html_template_convert.t
 t/7_special_html_template_combine.t
 t/7_special_html_template_noload.t
 t/7_special_html_template_unparsed.t
+t/7_special_html_template_r_combine.t
+t/7_special_html_template_replace.t
 t/Dotiac/DTL/Addon/customtext.pm
 t/Dtest.pm
 t/inc_more.html
