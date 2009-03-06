@@ -2,7 +2,7 @@
 #html_template_pure.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.3
+#Version 0.4
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -18,15 +18,16 @@
 package Dotiac::DTL::Addon::html_template_pure;
 use strict;
 use warnings;
+use Dotiac::DTL::Core;
+use base qw/Dotiac::DTL::Parser/;
 require Dotiac::DTL::Tag;
-require Dotiac::DTL::Core;
 require Dotiac::DTL::Addon::html_template::Variable;
 require Dotiac::DTL::Tag::autoescape;
 require Dotiac::DTL::Tag::if;
 require Dotiac::DTL::Tag::importloop;
 require Dotiac::DTL::Tag::include;
 
-our $VERSION=0.3;
+our $VERSION = 0.4;
 our %OPTIONS=(
 	loop_context_vars=>1,
 	global_vars=>1,
@@ -199,7 +200,7 @@ sub parse {
 	local $_;
 	while ($Dotiac::DTL::PARSER eq __PACKAGE__) {
 		pos($$template) = $$pos;
-		if($$template=~m/(.*?)<(?:!--\s*)?
+		if($$template=~m/\G(.*?)<(?:!--\s*)?
 		([\/]?)\s*
 		[Tt][Mm][Pp][Ll]_((?:[Vv][Aa][Rr])|(?:[Ii][Ff])|(?:[Ee][Ll][Ss][Ee])|(?:[Uu][Nn][Ll][Ee][Ss][Ss])|(?:[Ll][Oo][Oo][Pp])|(?:[Ii][Nn][Cc][Ll][Uu][Dd][Ee]))
 		\s*(

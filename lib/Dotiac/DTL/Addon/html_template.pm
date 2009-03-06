@@ -2,7 +2,7 @@
 #html_template.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.3
+#Version 0.4
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -19,13 +19,13 @@ package Dotiac::DTL::Addon::html_template;
 use strict;
 use warnings;
 use base qw/Dotiac::DTL::Parser Dotiac::DTL::Addon::html_template_pure/;
+use Dotiac::DTL::Core;
 require Dotiac::DTL::Tag;
-require Dotiac::DTL::Core;
 require Dotiac::DTL::Addon;
 require Dotiac::DTL::Addon::html_template::Variable;
 require Dotiac::DTL::Tag::importloop;
 
-our $VERSION=0.3;
+our $VERSION = 0.4;
 
 my @oldparser;
 my $first;

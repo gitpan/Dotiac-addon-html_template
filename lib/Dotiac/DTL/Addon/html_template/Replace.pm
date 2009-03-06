@@ -2,7 +2,7 @@
 #Replace.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.3
+#Version 0.4
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -26,7 +26,7 @@ use Scalar::Util qw/blessed reftype/;
 use Carp qw/croak/;
 require File::Basename;
 
-our $VERSION=0.3;
+our $VERSION = 0.4;
 
 our $COMBINE=0;
 
@@ -153,13 +153,14 @@ sub _associate {
 	}
 }
 
-package HTML::Template;
+#package HTML::Template;
 
-our $VERSION=2.9;
+#our 
+$HTML::Template::VERSION=2.9;
 
 no warnings qw/redefine/;
 
-sub _find_file { #like HTML::Template
+sub HTML::Template::_find_file { #like HTML::Template
 	my $o=shift;
 	my $file=$o->{filename};
 	return File::Spec->canonpath($file) if (File::Spec->file_name_is_absolute($file) and (-e $file));
@@ -196,26 +197,26 @@ my %escapeflags = (
 	js=>"j"
 );
 
-sub new_file {
+sub HTML::Template::new_file {
 	my $class = shift;
-	return $class->new('filename', @_);
+	return $class->HTML::Template::new('filename', @_);
 }
-sub new_filehandle {
+sub HTML::Template::new_filehandle {
 	my $class = shift;
-	return $class->new('filehandle', @_);
+	return $class->HTML::Template::new('filehandle', @_);
 }
-sub new_array_ref {
+sub HTML::Template::new_array_ref {
 	my $class = shift;
-	return $class->new('arrayref', @_);
+	return $class->HTML::Template::new('arrayref', @_);
 }
-sub new_scalar_ref {
+sub HTML::Template::new_scalar_ref {
 	my $class = shift;
-	return $class->new('scalarref', @_);
+	return $class->HTML::Template::new('scalarref', @_);
 }
 
 use Carp qw/croak/;
 
-sub new {
+sub HTML::Template::new {
 	%Dotiac::DTL::Addon::html_template::Replace::include=();
 	my $class=shift;
 	my %opts=@_;
@@ -236,7 +237,7 @@ sub new {
 			$flags=($Dotiac::DTL::Addon::html_template::Replace::COMBINE?"+":"-").$flags;
 			my @compile=();
 			push @compile,$opts{compile} if exists ($opts{compile});
-			my $file=_find_file(\%opts);
+			my $file=HTML::Template::_find_file(\%opts);
 			croak "Can't find file: $opts{filename}" unless $file;
 			if (-e "$file$flags.html") { #If there is already a converted version, use it.
 				if ((stat("$file$flags.html"))[9] >= (stat("$file"))[9]) {

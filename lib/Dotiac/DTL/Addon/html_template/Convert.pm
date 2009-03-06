@@ -2,7 +2,7 @@
 #Convert.pm
 #Last Change: 2009-01-21
 #Copyright (c) 2009 Marc-Seabstian "Maluku" Lucksch
-#Version 0.3
+#Version 0.4
 ####################
 #This file is an addon to the Dotiac::DTL project. 
 #http://search.cpan.org/perldoc?Dotiac::DTL
@@ -24,7 +24,7 @@ use File::Spec;
 use Scalar::Util qw/blessed reftype/;
 require File::Basename;
 
-our $VERSION=0.3;
+our $VERSION = 0.4;
 
 our $COMBINE=0;
 

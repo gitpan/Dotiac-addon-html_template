@@ -1,4 +1,4 @@
-use Test::More tests => 98;
+use Test::More tests => 104;
 eval {
 	require Test::NoWarnings;
 	Test::NoWarnings->import();
@@ -46,3 +46,4 @@ dtest("parser_pure_loop_vars2.html","A<>:\n<>:\n<>:\n<>:\nA\n",{loop=>[{},{},{},
 $Dotiac::DTL::Addon::html_template_pure::OPTIONS{loop_context_vars}=1;
 dtest("parser_pure_include.html","AB\nA\n",{test=>"B"},"TMPL_INCLUDE");
 dtest("test.tmpl"," <html>\n  <head><title>Test Template</title>\n  <body>\n  My Home Directory is /bin\n  <p>\n  My Path is set to /FOO;/BAR\n  </body>\n  </html>\n",{PATH => "/FOO;/BAR",HOME=>"/bin"},"H::T Example");
+dtest("tag_autoescape.html","A{% autoescape off %}{{ X }}A{% autoescape on %}{{ X }}{% endautoescape %}A{% endautoescape %}\n",{},"Pure test");
